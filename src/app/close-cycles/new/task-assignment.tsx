@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { predefinedTasks } from "@/data/predefined-tasks";
+import { predefinedTasks, taskCategories, Task } from "@/data/predefined-tasks";
 import { User } from "@/types/user";
 
 interface TaskAssignmentProps {
@@ -13,6 +13,7 @@ interface TaskAssignmentProps {
 export default function TaskAssignment({ users, currentUserId, onTaskAssignmentsChange }: TaskAssignmentProps) {
   const [taskAssignments, setTaskAssignments] = useState<{ [key: string]: string }>({});
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
   const handleAssignmentChange = (task: string, userId: string) => {
     const newAssignments = { ...taskAssignments, [task]: userId };
@@ -37,6 +38,10 @@ export default function TaskAssignment({ users, currentUserId, onTaskAssignments
     onTaskAssignmentsChange(newAssignments);
     setSelectedTasks([]); // Clear selection after bulk assignment
   };
+
+  const filteredTasks = selectedCategory === "All"
+    ? predefinedTasks
+    : predefinedTasks.filter(task => task.category === selectedCategory);
 
   return (
     <div className="space-y-6">
@@ -75,40 +80,72 @@ export default function TaskAssignment({ users, currentUserId, onTaskAssignments
           </div>
         </div>
 
+        {/* Category Filter */}
+        <div className="mb-6">
+          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+            Filter by Category
+          </label>
+          <select
+            id="category"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="All">All Categories</option>
+            {taskCategories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Task List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {predefinedTasks.map((task) => (
-            <div 
-              key={task} 
-              className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
-                selectedTasks.includes(task) ? 'ring-2 ring-indigo-500' : ''
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={selectedTasks.includes(task)}
-                  onChange={() => handleTaskSelection(task)}
-                  className="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-2">{task}</h3>
-                  <select
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={taskAssignments[task] || ""}
-                    onChange={(e) => handleAssignmentChange(task, e.target.value)}
-                  >
-                    <option value="">Select Assignee</option>
-                    {users.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name || "Unnamed User"} ({user.role})
-                      </option>
-                    ))}
-                  </select>
+        <div className="space-y-6">
+          {taskCategories.map((category) => {
+            const categoryTasks = predefinedTasks.filter(task => task.category === category);
+            if (selectedCategory !== "All" && selectedCategory !== category) return null;
+            
+            return (
+              <div key={category} className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900">{category}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categoryTasks.map((task) => (
+                    <div 
+                      key={task.title} 
+                      className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
+                        selectedTasks.includes(task.title) ? 'ring-2 ring-indigo-500' : ''
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedTasks.includes(task.title)}
+                          onChange={() => handleTaskSelection(task.title)}
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-900 mb-2">{task.title}</h3>
+                          <select
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            value={taskAssignments[task.title] || ""}
+                            onChange={(e) => handleAssignmentChange(task.title, e.target.value)}
+                          >
+                            <option value="">Select Assignee</option>
+                            {users.map((user) => (
+                              <option key={user.id} value={user.id}>
+                                {user.name || "Unnamed User"} ({user.role})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

@@ -32,9 +32,9 @@ export async function POST(req: Request) {
             {
               name: "Month-End Close Tasks",
               tasks: {
-                create: predefinedTasks.map((title) => ({
-                  title,
-                  assignedToId: taskAssignments[title] || userId,
+                create: predefinedTasks.map((task) => ({
+                  title: task.title,
+                  assignedToId: taskAssignments[task.title] || userId,
                   createdById: userId,
                 })),
               },
