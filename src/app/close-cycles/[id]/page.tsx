@@ -5,6 +5,25 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import TaskCard from "./task-card";
 
+function ProgressBar({ completed, total }: { completed: number; total: number }) {
+  const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+  
+  return (
+    <div className="w-full">
+      <div className="flex justify-between text-sm text-gray-600 mb-1">
+        <span>Progress</span>
+        <span>{percentage}%</span>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-2.5">
+        <div
+          className="bg-indigo-600 h-2.5 rounded-full transition-all duration-300"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default async function CloseCycleDetailsPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -100,43 +119,54 @@ export default async function CloseCycleDetailsPage({ params }: { params: { id: 
         </div>
 
         <div className="space-y-8">
-          {sortedAssignees.map(({ user, tasks }) => (
-            <div key={user.id} className="bg-white shadow rounded-lg p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">{user.name || "Unnamed User"}</h2>
-                  <p className="text-sm text-gray-500">{user.role}</p>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-500">
-                    {tasks.length} task{tasks.length !== 1 ? "s" : ""}
-                  </span>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-500">Status:</span>
-                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
-                      {tasks.filter(t => t.status === "DONE").length} Done
+          {sortedAssignees.map(({ user, tasks }) => {
+            const completedTasks = tasks.filter(t => t.status === "DONE").length;
+            const totalTasks = tasks.length;
+            
+            return (
+              <div key={user.id} className="bg-white shadow rounded-lg p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">{user.name || "Unnamed User"}</h2>
+                    <p className="text-sm text-gray-500">{user.role}</p>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm text-gray-500">
+                      {tasks.length} task{tasks.length !== 1 ? "s" : ""}
                     </span>
-                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800">
-                      {tasks.filter(t => t.status === "IN_PROGRESS").length} In Progress
-                    </span>
-                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800">
-                      {tasks.filter(t => t.status === "BLOCKED").length} Blocked
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-500">Status:</span>
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
+                        {tasks.filter(t => t.status === "DONE").length} Done
+                      </span>
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800">
+                        {tasks.filter(t => t.status === "IN_PROGRESS").length} In Progress
+                      </span>
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800">
+                        {tasks.filter(t => t.status === "BLOCKED").length} Blocked
+                      </span>
+                    </div>
                   </div>
                 </div>
+
+                {/* Progress Bar */}
+                <div className="mb-6">
+                  <ProgressBar completed={completedTasks} total={totalTasks} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {tasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      assignedTo={task.assignedTo}
+                      currentUserId={session.user.id}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {tasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    assignedTo={task.assignedTo}
-                    currentUserId={session.user.id}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
