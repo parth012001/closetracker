@@ -50,6 +50,28 @@ export default async function CloseCycleDetailsPage({ params }: { params: { id: 
     notFound();
   }
 
+  // Group tasks by assigned user
+  const tasksByAssignee = closeCycle.checklists.reduce((acc, checklist) => {
+    checklist.tasks.forEach((task) => {
+      const assigneeId = task.assignedTo.id;
+      if (!acc[assigneeId]) {
+        acc[assigneeId] = {
+          user: task.assignedTo,
+          tasks: [],
+        };
+      }
+      acc[assigneeId].tasks.push(task);
+    });
+    return acc;
+  }, {} as Record<string, { user: typeof closeCycle.checklists[0]["tasks"][0]["assignedTo"]; tasks: typeof closeCycle.checklists[0]["tasks"] }>);
+
+  // Sort assignees by name, handling null names
+  const sortedAssignees = Object.values(tasksByAssignee).sort((a, b) => {
+    const nameA = a.user.name || "Unnamed User";
+    const nameB = b.user.name || "Unnamed User";
+    return nameA.localeCompare(nameB);
+  });
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -78,11 +100,33 @@ export default async function CloseCycleDetailsPage({ params }: { params: { id: 
         </div>
 
         <div className="space-y-8">
-          {closeCycle.checklists.map((checklist) => (
-            <div key={checklist.id}>
-              <h2 className="text-xl font-semibold mb-4">{checklist.name}</h2>
+          {sortedAssignees.map(({ user, tasks }) => (
+            <div key={user.id} className="bg-white shadow rounded-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">{user.name || "Unnamed User"}</h2>
+                  <p className="text-sm text-gray-500">{user.role}</p>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-500">
+                    {tasks.length} task{tasks.length !== 1 ? "s" : ""}
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-500">Status:</span>
+                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
+                      {tasks.filter(t => t.status === "DONE").length} Done
+                    </span>
+                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800">
+                      {tasks.filter(t => t.status === "IN_PROGRESS").length} In Progress
+                    </span>
+                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800">
+                      {tasks.filter(t => t.status === "BLOCKED").length} Blocked
+                    </span>
+                  </div>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {checklist.tasks.map((task) => (
+                {tasks.map((task) => (
                   <TaskCard
                     key={task.id}
                     task={task}
