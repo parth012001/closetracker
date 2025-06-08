@@ -1,27 +1,18 @@
 import { Inter } from "next/font/google";
-import { getServerSession } from "next-auth";
-import { authOptions } from "./api/auth/[...nextauth]/route";
-import SessionProvider from "@/components/providers/session-provider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Close Management Tracker",
-  description: "Manage your financial close process efficiently",
+  title: "Close Tracker",
+  description: "Track your close cycles",
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const session = await getServerSession(authOptions);
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <SessionProvider session={session}>{children}</SessionProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
+        {children}
       </body>
     </html>
   );
