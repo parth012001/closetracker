@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const userId = session.user.id;
 
     const body = await req.json();
-    const { name, startDate, endDate, description, status } = body;
+    const { name, startDate, endDate, description, status, taskAssignments } = body;
 
     if (!name || !startDate || !endDate || !status) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
               tasks: {
                 create: predefinedTasks.map((title) => ({
                   title,
-                  assignedToId: userId,
+                  assignedToId: taskAssignments[title] || userId,
                   createdById: userId,
                 })),
               },
