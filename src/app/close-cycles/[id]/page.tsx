@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import TaskCard from "./task-card";
+import StatusSelector from "./status-selector";
 
 function ProgressBar({ completed, total }: { completed: number; total: number }) {
   const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
@@ -112,7 +113,7 @@ export default async function CloseCycleDetailsPage({ params }: { params: { id: 
             </div>
             <div>
               <p className="text-sm text-gray-500">Status</p>
-              <p className="font-medium">{closeCycle.status}</p>
+              <StatusSelector initialStatus={closeCycle.status} closeCycleId={closeCycle.id} />
             </div>
           </div>
           {closeCycle.description && (
