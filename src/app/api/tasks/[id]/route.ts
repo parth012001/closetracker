@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 export async function PATCH(
   request: Request,
@@ -14,29 +14,71 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { status, comment } = body;
+    const { status, comment, isStatusChange } = body;
 
-    if (!status) {
-      return new NextResponse("Status is required", { status: 400 });
-    }
-
-    // Get the current task to check the previous status
-    const currentTask = await prisma.task.findUnique({
+    const task = await prisma.task.findUnique({
       where: { id: params.id },
-      select: { status: true },
+      include: {
+        assignedTo: true,
+      },
     });
 
-    if (!currentTask) {
+    if (!task) {
       return new NextResponse("Task not found", { status: 404 });
     }
 
-    // Update the task and create a status change record in a transaction
-    const updatedTask = await prisma.$transaction(async (tx) => {
-      // Update the task
-      const task = await tx.task.update({
-        where: { id: params.id },
-        data: { status },
+    // Start a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // If this is a status change, create a status change record
+      if (isStatusChange && status) {
+        await tx.taskStatusChange.create({
+          data: {
+            taskId: task.id,
+            fromStatus: task.status,
+            toStatus: status,
+            changedById: session.user.id,
+            changedByName: session.user.name || "Unknown User",
+            comment: comment || null,
+          },
+        });
+      } 
+      // Only create a separate comment record if it's not part of a status change
+      else if (comment && !isStatusChange) {
+        await tx.comment.create({
+          data: {
+            content: comment,
+            taskId: task.id,
+            userId: session.user.id,
+          },
+        });
+      }
+
+      // Update the task status if provided
+      if (status) {
+        await tx.task.update({
+          where: { id: task.id },
+          data: { status },
+        });
+      }
+
+      // Return the updated task with all related data
+      return await tx.task.findUnique({
+        where: { id: task.id },
         include: {
+          comments: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  role: true,
+                },
+              },
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
           assignedTo: {
             select: {
               id: true,
@@ -44,25 +86,16 @@ export async function PATCH(
               role: true,
             },
           },
+          statusHistory: {
+            orderBy: {
+              changedAt: "desc",
+            },
+          },
         },
       });
-
-      // Create status change record
-      await tx.taskStatusChange.create({
-        data: {
-          taskId: params.id,
-          fromStatus: currentTask.status,
-          toStatus: status,
-          changedById: session.user.id,
-          changedByName: session.user.name || "Unknown User",
-          comment,
-        },
-      });
-
-      return task;
     });
 
-    return NextResponse.json(updatedTask);
+    return NextResponse.json(result);
   } catch (error) {
     console.error("[TASK_PATCH]", error);
     return new NextResponse("Internal error", { status: 500 });

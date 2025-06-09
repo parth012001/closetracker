@@ -40,7 +40,8 @@ export default function TaskCard({ task, assignedTo, currentUserId }: TaskCardPr
         },
         body: JSON.stringify({ 
           status: pendingStatusChange,
-          comment: withComment ? newComment : undefined 
+          comment: withComment ? newComment : undefined,
+          isStatusChange: true
         }),
       });
 
@@ -74,8 +75,8 @@ export default function TaskCard({ task, assignedTo, currentUserId }: TaskCardPr
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ 
-          status: task.status,
-          comment: newComment 
+          comment: newComment,
+          isStatusChange: false
         }),
       });
 
@@ -200,7 +201,7 @@ export default function TaskCard({ task, assignedTo, currentUserId }: TaskCardPr
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 max-w-lg w-full">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Add a Comment
+              Add a Comment ("None" if Nothing to add)
             </h3>
             <p className="text-sm text-gray-500 mb-4">            </p>
             <textarea
