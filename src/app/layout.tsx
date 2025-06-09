@@ -17,12 +17,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
         <AuthProvider>
           <div className="min-h-screen bg-gray-50">
             <Navbar />
-            {children}
+            <main>{children}</main>
           </div>
         </AuthProvider>
       </body>

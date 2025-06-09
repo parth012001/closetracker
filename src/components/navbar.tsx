@@ -1,10 +1,11 @@
 "use client";
 
 import { Fragment } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Menu, Transition } from "@headlessui/react";
 import { signOut, useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard" },
@@ -17,7 +18,54 @@ function classNames(...classes: string[]) {
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && status === "unauthenticated" && pathname !== "/login" && pathname !== "/") {
+      router.push("/login");
+    }
+  }, [status, pathname, router, mounted]);
+
+  // Don't render anything until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return null;
+  }
+
+  // Show simplified navbar for landing page
+  if (pathname === "/") {
+    return (
+      <nav className="bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex-shrink-0 flex items-center">
+              <Link href="/" className="text-xl font-bold text-indigo-600">
+                CloseTracker
+              </Link>
+            </div>
+            <div className="flex items-center">
+              <Link
+                href="/login"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+              >
+                Sign in
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
+  // Don't render navbar if not authenticated for other pages
+  if (status !== "authenticated") {
+    return null;
+  }
 
   return (
     <nav className="bg-white border-b border-gray-100">
