@@ -91,6 +91,11 @@ export default async function CloseCycleDetailsPage({ params }: { params: { id: 
     return nameA.localeCompare(nameB);
   });
 
+  // Calculate overall progress
+  const allTasks = sortedAssignees.flatMap(({ tasks }) => tasks);
+  const totalTasks = allTasks.length;
+  const completedTasks = allTasks.filter(task => task.status === "DONE").length;
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -116,6 +121,30 @@ export default async function CloseCycleDetailsPage({ params }: { params: { id: 
               <p className="mt-1">{closeCycle.description}</p>
             </div>
           )}
+        </div>
+
+        {/* Overall Progress Section */}
+        <div className="bg-white shadow rounded-lg p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Overall Progress</h2>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-500">
+                {completedTasks} of {totalTasks} tasks completed
+              </span>
+              <div className="flex items-center space-x-2">
+                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800">
+                  {allTasks.filter(t => t.status === "DONE").length} Done
+                </span>
+                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800">
+                  {allTasks.filter(t => t.status === "IN_PROGRESS").length} In Progress
+                </span>
+                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800">
+                  {allTasks.filter(t => t.status === "BLOCKED").length} Blocked
+                </span>
+              </div>
+            </div>
+          </div>
+          <ProgressBar completed={completedTasks} total={totalTasks} />
         </div>
 
         <div className="space-y-8">
