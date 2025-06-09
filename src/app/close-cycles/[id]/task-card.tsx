@@ -56,7 +56,10 @@ export default function TaskCard({ task, assignedTo, currentUserId }: TaskCardPr
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ comment: newComment }),
+        body: JSON.stringify({ 
+          status: task.status, // Include current status
+          comment: newComment 
+        }),
       });
 
       if (!response.ok) {
