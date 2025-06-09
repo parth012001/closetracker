@@ -15,34 +15,49 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String            @id @default(cuid())
   name          String?
-  email         String    @unique
+  email         String            @unique
   password      String
   image         String?
-  role          Role      @default(USER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  assignedTasks Task[]    @relation("AssignedTo")
-  createdTasks  Task[]    @relation("CreatedBy")
+  role          Role             @default(USER)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  assignedTasks Task[]           @relation("AssignedTasks")
+  createdTasks  Task[]           @relation("CreatedTasks")
+  statusChanges TaskStatusChange[] @relation("StatusChanges")
   comments      Comment[]
 }
 
 model Task {
-  id          String      @id @default(cuid())
-  title       String
-  description String?
-  status      TaskStatus  @default(NOT_STARTED)
-  dueDate     DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  assignedTo  User        @relation("AssignedTo", fields: [assignedToId], references: [id])
-  assignedToId String
-  createdBy   User        @relation("CreatedBy", fields: [createdById], references: [id])
-  createdById String
-  comments    Comment[]
-  checklist   Checklist   @relation(fields: [checklistId], references: [id])
-  checklistId String
+  id            String            @id @default(cuid())
+  title         String
+  description   String?
+  category      String?
+  status        TaskStatus        @default(NOT_STARTED)
+  assignedTo    User              @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  assignedToId  String
+  createdBy     User              @relation("CreatedTasks", fields: [createdById], references: [id])
+  createdById   String
+  checklist     Checklist         @relation(fields: [checklistId], references: [id])
+  checklistId   String
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  comments      Comment[]
+  statusHistory TaskStatusChange[]
+}
+
+model TaskStatusChange {
+  id           String     @id @default(cuid())
+  task         Task       @relation(fields: [taskId], references: [id])
+  taskId       String
+  fromStatus   TaskStatus
+  toStatus     TaskStatus
+  changedAt    DateTime   @default(now())
+  changedBy    User       @relation("StatusChanges", fields: [changedById], references: [id])
+  changedById  String
+  changedByName String
+  comment      String?
 }
 
 model Checklist {

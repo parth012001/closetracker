@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import TaskCard from "./task-card";
 import StatusSelector from "./status-selector";
+import Link from "next/link";
 
 function ProgressBar({ completed, total }: { completed: number; total: number }) {
   const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
@@ -25,14 +26,22 @@ function ProgressBar({ completed, total }: { completed: number; total: number })
   );
 }
 
-export default async function CloseCycleDetailsPage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
+
+export default async function CloseCycleDetailsPage({ params }: PageProps) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     notFound();
   }
 
+  const closeCycleId = params.id;
+
   const closeCycle = await prisma.closeCycle.findUnique({
-    where: { id: params.id },
+    where: { id: closeCycleId },
     include: {
       checklists: {
         include: {
@@ -57,6 +66,11 @@ export default async function CloseCycleDetailsPage({ params }: { params: { id: 
                   id: true,
                   name: true,
                   role: true,
+                },
+              },
+              statusHistory: {
+                orderBy: {
+                  changedAt: "desc",
                 },
               },
             },
@@ -101,7 +115,18 @@ export default async function CloseCycleDetailsPage({ params }: { params: { id: 
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white shadow rounded-lg p-6 mb-8">
-          <h1 className="text-2xl font-bold mb-4">{closeCycle.name}</h1>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{closeCycle.name}</h1>
+              <p className="mt-1 text-sm text-gray-500">{closeCycle.description}</p>
+            </div>
+            <Link
+              href={`/close-cycles/${closeCycleId}/logs`}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              View Activity Log
+            </Link>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-gray-500">Start Date</p>
@@ -116,12 +141,6 @@ export default async function CloseCycleDetailsPage({ params }: { params: { id: 
               <StatusSelector initialStatus={closeCycle.status} closeCycleId={closeCycle.id} />
             </div>
           </div>
-          {closeCycle.description && (
-            <div className="mt-4">
-              <p className="text-sm text-gray-500">Description</p>
-              <p className="mt-1">{closeCycle.description}</p>
-            </div>
-          )}
         </div>
 
         {/* Overall Progress Section */}
